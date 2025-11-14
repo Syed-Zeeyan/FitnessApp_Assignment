@@ -144,8 +144,10 @@ Only respond in JSON format with these keys:
       }
     }
     
-    // If all models failed, return error
+    // Handle all error cases - if we reach the end of this block without returning,
+    // result is guaranteed to be defined
     if (!result) {
+      // Handle 503 errors
       if (lastError?.status === 503) {
         return NextResponse.json(
           {
@@ -155,6 +157,8 @@ Only respond in JSON format with these keys:
           { status: 503 }
         )
       }
+      
+      // Handle 404 errors
       if (lastError?.status === 404) {
         return NextResponse.json(
           {
@@ -165,7 +169,7 @@ Only respond in JSON format with these keys:
         )
       }
       
-      // Handle other errors
+      // Handle other specific errors
       if (lastError) {
         console.error("Gemini API error details:", lastError)
         
@@ -218,7 +222,7 @@ Only respond in JSON format with these keys:
         )
       }
       
-      // Final fallback if no result and no error
+      // Final fallback - no result and no error (shouldn't happen, but TypeScript needs this)
       return NextResponse.json(
         {
           success: false,
@@ -228,18 +232,7 @@ Only respond in JSON format with these keys:
       )
     }
 
-    // At this point, result is guaranteed to be defined (all undefined cases returned above)
-    // Explicit check to satisfy TypeScript's control flow analysis
-    if (!result) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Failed to generate analysis. Please try again.",
-        },
-        { status: 500 }
-      )
-    }
-    
+    // TypeScript now knows result is defined because all !result cases returned above
     const response = await result.response
     const text = response.text()
 
