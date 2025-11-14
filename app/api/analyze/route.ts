@@ -32,15 +32,19 @@ export async function POST(request: NextRequest) {
     // Check if Gemini API key is configured
     const apiKey = process.env.GEMINI_API_KEY
     
-    // Debug logging for Vercel
-    console.log("[Analyze API] Environment check:", {
+    // Debug logging for Vercel - log to both console and include in error response
+    const debugInfo = {
       hasApiKey: !!apiKey,
       apiKeyLength: apiKey?.length || 0,
       nodeEnv: process.env.NODE_ENV,
       vercel: process.env.VERCEL,
       vercelEnv: process.env.VERCEL_ENV,
-      allEnvKeys: Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('API'))
-    })
+      allEnvKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('GEMINI') || k.toUpperCase().includes('API')),
+      // Try alternative access methods
+      directAccess: !!process.env['GEMINI_API_KEY'],
+      allProcessEnvKeys: Object.keys(process.env).slice(0, 20), // First 20 keys for debugging
+    }
+    console.error("[Analyze API] Environment check:", JSON.stringify(debugInfo, null, 2))
     
     if (!apiKey || apiKey.trim() === "") {
       console.error("[Analyze API] GEMINI_API_KEY is missing or empty")
@@ -52,7 +56,9 @@ export async function POST(request: NextRequest) {
             hasApiKey: false,
             nodeEnv: process.env.NODE_ENV,
             vercel: !!process.env.VERCEL,
-            vercelEnv: process.env.VERCEL_ENV
+            vercelEnv: process.env.VERCEL_ENV,
+            allGeminiKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('GEMINI')),
+            testEndpoint: "Visit /api/test-env to see detailed environment variable information"
           }
         },
         { status: 500 }
