@@ -157,14 +157,36 @@ export async function POST(request: NextRequest) {
           // Example: "Vegan Protein Shake" -> "vegan protein shake"
           // Example: "Grilled Chicken Salad" -> "chicken salad"
           
-          // Remove common cooking methods and prepositions
-          const cleaned = lowerName
-            .replace(/\b(baked|grilled|roasted|steamed|fried|sautéed|raw|boiled|poached|braised|stir-fried|pan-seared|with|and|&)\b/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
+          // Improved keyword extraction - preserve important food descriptors
+          // First, extract key food words before removing cooking methods
+          const foodWords: string[] = []
           
-          // If cleaned name is too short or empty, use original
-          searchQuery = cleaned.length > 3 ? cleaned : lowerName
+          // Extract protein sources
+          const proteins = ['chicken', 'fish', 'beef', 'pork', 'turkey', 'lamb', 'tofu', 'tempeh', 'egg', 'seafood', 'salmon', 'tuna', 'shrimp']
+          // Extract vegetables
+          const vegetables = ['potato', 'sweet potato', 'broccoli', 'carrot', 'spinach', 'lettuce', 'kale', 'pepper', 'onion', 'garlic', 'mushroom', 'zucchini', 'cucumber', 'tomato', 'corn', 'bean', 'edamame']
+          // Extract other food items
+          const otherFoods = ['salad', 'burger', 'sandwich', 'pasta', 'rice', 'quinoa', 'oatmeal', 'bread', 'soup', 'shake', 'smoothie', 'bowl', 'wrap']
+          
+          // Check for these keywords and preserve them
+          const allFoodKeywords = [...proteins, ...vegetables, ...otherFoods]
+          allFoodKeywords.forEach(keyword => {
+            if (lowerName.includes(keyword)) {
+              foodWords.push(keyword)
+            }
+          })
+          
+          // If we found food keywords, use them; otherwise clean the name
+          if (foodWords.length > 0) {
+            searchQuery = foodWords.join(' ')
+          } else {
+            // Fallback: remove cooking methods and prepositions
+            const cleaned = lowerName
+              .replace(/\b(baked|grilled|roasted|steamed|fried|sautéed|raw|boiled|poached|braised|stir-fried|pan-seared|with|and|&)\b/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+            searchQuery = cleaned.length > 3 ? cleaned : lowerName
+          }
         } else {
           // For exercises, extract main exercise type
           // Example: "Brisk Walk Or Light Jog" -> "walking jogging"
