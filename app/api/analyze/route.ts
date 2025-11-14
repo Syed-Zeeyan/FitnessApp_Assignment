@@ -31,10 +31,30 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Gemini API key is configured
     const apiKey = process.env.GEMINI_API_KEY
+    
+    // Debug logging for Vercel
+    console.log("[Analyze API] Environment check:", {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
+      vercel: process.env.VERCEL,
+      vercelEnv: process.env.VERCEL_ENV,
+      allEnvKeys: Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('API'))
+    })
+    
     if (!apiKey || apiKey.trim() === "") {
       console.error("[Analyze API] GEMINI_API_KEY is missing or empty")
       return NextResponse.json(
-        { success: false, error: "GEMINI_API_KEY not configured. Please add it in Vercel environment variables and redeploy." },
+        { 
+          success: false, 
+          error: "GEMINI_API_KEY not configured. Please add it in Vercel environment variables and redeploy.",
+          debug: {
+            hasApiKey: false,
+            nodeEnv: process.env.NODE_ENV,
+            vercel: !!process.env.VERCEL,
+            vercelEnv: process.env.VERCEL_ENV
+          }
+        },
         { status: 500 }
       )
     }
