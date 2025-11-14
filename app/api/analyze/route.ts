@@ -232,8 +232,9 @@ Only respond in JSON format with these keys:
       )
     }
 
-    // TypeScript now knows result is defined because all !result cases returned above
-    const response = await result.response
+    // At this point, result is guaranteed to be defined because all !result cases above return early
+    // Type assertion is safe here - we've verified result exists in the if block above
+    const response = await (result!).response
     const text = response.text()
 
     // Parse JSON from response
