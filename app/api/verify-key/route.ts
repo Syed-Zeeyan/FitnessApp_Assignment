@@ -8,9 +8,29 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = process.env.GEMINI_API_KEY
     
+    // Enhanced debugging
+    const debugInfo = {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
+      vercel: process.env.VERCEL,
+      vercelEnv: process.env.VERCEL_ENV,
+      allGeminiKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('GEMINI')),
+      allApiKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('API')),
+    }
+    
     if (!apiKey) {
       return NextResponse.json(
-        { error: "GEMINI_API_KEY not configured" },
+        { 
+          error: "GEMINI_API_KEY not configured",
+          debug: debugInfo,
+          troubleshooting: {
+            step1: "Check Vercel Dashboard → Settings → Environment Variables",
+            step2: "Ensure GEMINI_API_KEY is set for Production, Preview, AND Development",
+            step3: "After updating, manually redeploy from Deployments tab",
+            step4: "Wait for deployment to complete (can take 1-2 minutes)"
+          }
+        },
         { status: 500 }
       )
     }
