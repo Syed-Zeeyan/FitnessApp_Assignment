@@ -30,9 +30,11 @@ function getGenAI() {
 export async function POST(request: NextRequest) {
   try {
     // Check if Gemini API key is configured
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey || apiKey.trim() === "") {
+      console.error("[Analyze API] GEMINI_API_KEY is missing or empty")
       return NextResponse.json(
-        { success: false, error: "GEMINI_API_KEY not configured" },
+        { success: false, error: "GEMINI_API_KEY not configured. Please add it in Vercel environment variables and redeploy." },
         { status: 500 }
       )
     }
