@@ -107,7 +107,7 @@ Only respond in JSON format with these keys:
 
     // Generate analysis using Gemini Vision
     // Try each model until one works
-    let result
+    let result: Awaited<ReturnType<ReturnType<typeof genAI.getGenerativeModel>["generateContent"]>> | undefined = undefined
     let lastError: any = null
     
     for (const modelName of modelNames) {
@@ -144,7 +144,7 @@ Only respond in JSON format with these keys:
       }
     }
     
-    // If all models failed
+    // If all models failed, return error
     if (!result) {
       if (lastError?.status === 503) {
         return NextResponse.json(
@@ -164,64 +164,61 @@ Only respond in JSON format with these keys:
           { status: 404 }
         )
       }
-    }
-    
-    // Handle other errors
-    if (!result && lastError) {
-      // Handle Gemini API errors
-      console.error("Gemini API error details:", lastError)
       
-      if (lastError.status === 401 || lastError.message?.includes("API key")) {
+      // Handle other errors
+      if (lastError) {
+        console.error("Gemini API error details:", lastError)
+        
+        if (lastError.status === 401 || lastError.message?.includes("API key")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Authentication failed: Invalid GEMINI_API_KEY",
+            },
+            { status: 401 }
+          )
+        }
+
+        if (lastError.status === 404 || lastError.message?.includes("not found")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Model not found. Tried: ${modelNames.join(", ")}. Your API key may not have access to these models. Please check your Google AI Studio account.`,
+            },
+            { status: 404 }
+          )
+        }
+
+        if (lastError.status === 429) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Rate limit exceeded. Please try again later",
+            },
+            { status: 429 }
+          )
+        }
+
+        if (lastError.status === 400 || lastError.message?.includes("safety")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Image content violates safety policies",
+            },
+            { status: 400 }
+          )
+        }
+
         return NextResponse.json(
           {
             success: false,
-            error: "Authentication failed: Invalid GEMINI_API_KEY",
+            error: lastError.message || "Unknown error occurred during analysis",
           },
-          { status: 401 }
+          { status: 500 }
         )
       }
-
-      if (lastError.status === 404 || lastError.message?.includes("not found")) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Model not found. Tried: ${modelNames.join(", ")}. Your API key may not have access to these models. Please check your Google AI Studio account.`,
-          },
-          { status: 404 }
-        )
-      }
-
-      if (lastError.status === 429) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Rate limit exceeded. Please try again later",
-          },
-          { status: 429 }
-        )
-      }
-
-      if (lastError.status === 400 || lastError.message?.includes("safety")) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Image content violates safety policies",
-          },
-          { status: 400 }
-        )
-      }
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: lastError.message || "Unknown error occurred during analysis",
-        },
-        { status: 500 }
-      )
-    }
-
-    // TypeScript guard: ensure result is defined
-    if (!result) {
+      
+      // Final fallback if no result and no error
       return NextResponse.json(
         {
           success: false,
@@ -231,7 +228,9 @@ Only respond in JSON format with these keys:
       )
     }
 
-    const response = await result.response
+    // At this point, result is guaranteed to be defined (all undefined cases returned above)
+    // Type assertion needed because TypeScript can't infer this from control flow
+    const response = await (result as NonNullable<typeof result>).response
     const text = response.text()
 
     // Parse JSON from response
