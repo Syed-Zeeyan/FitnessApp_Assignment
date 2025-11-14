@@ -47,21 +47,27 @@ import {
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  age: z.coerce
-    .number()
+  age: z.preprocess((val) => {
+    if (typeof val === "string") return Number(val)
+    return val
+  }, z.number()
     .min(13, "Age must be at least 13")
-    .max(120, "Age must be less than 120"),
+    .max(120, "Age must be less than 120")),
   gender: z.enum(["male", "female", "other"], {
-    required_error: "Please select a gender",
+    message: "Please select a gender",
   }),
-  height: z.coerce
-    .number()
+  height: z.preprocess((val) => {
+    if (typeof val === "string") return Number(val)
+    return val
+  }, z.number()
     .min(100, "Height must be at least 100 cm")
-    .max(250, "Height must be less than 250 cm"),
-  weight: z.coerce
-    .number()
+    .max(250, "Height must be less than 250 cm")),
+  weight: z.preprocess((val) => {
+    if (typeof val === "string") return Number(val)
+    return val
+  }, z.number()
     .min(30, "Weight must be at least 30 kg")
-    .max(300, "Weight must be less than 300 kg"),
+    .max(300, "Weight must be less than 300 kg")),
   fitnessGoal: z.enum(
     [
       "lose-weight",
@@ -71,17 +77,17 @@ const formSchema = z.object({
       "general-health",
     ],
     {
-      required_error: "Please select a fitness goal",
+      message: "Please select a fitness goal",
     }
   ),
   fitnessLevel: z.enum(
     ["beginner", "intermediate", "advanced", "expert"],
     {
-      required_error: "Please select your fitness level",
+      message: "Please select your fitness level",
     }
   ),
   workoutLocation: z.enum(["home", "gym", "outdoor", "mixed"], {
-    required_error: "Please select a workout location",
+    message: "Please select a workout location",
   }),
   dietaryPreferences: z.string().min(1, "Please enter your dietary preferences"),
   medicalIssues: z.string().optional(),
@@ -93,7 +99,7 @@ type FormValues = z.infer<typeof formSchema>
 export default function Home() {
   const router = useRouter()
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: "",
       age: undefined,

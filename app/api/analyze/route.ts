@@ -220,6 +220,17 @@ Only respond in JSON format with these keys:
       )
     }
 
+    // TypeScript guard: ensure result is defined
+    if (!result) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to generate analysis. Please try again.",
+        },
+        { status: 500 }
+      )
+    }
+
     const response = await result.response
     const text = response.text()
 
