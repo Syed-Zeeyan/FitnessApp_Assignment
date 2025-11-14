@@ -229,8 +229,18 @@ Only respond in JSON format with these keys:
     }
 
     // At this point, result is guaranteed to be defined (all undefined cases returned above)
-    // Type assertion needed because TypeScript can't infer this from control flow
-    const response = await (result as NonNullable<typeof result>).response
+    // Explicit check to satisfy TypeScript's control flow analysis
+    if (!result) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to generate analysis. Please try again.",
+        },
+        { status: 500 }
+      )
+    }
+    
+    const response = await result.response
     const text = response.text()
 
     // Parse JSON from response
